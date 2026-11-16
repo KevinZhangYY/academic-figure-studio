@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {sourceCrop,scalePixels,sourcePoint,connectorLines,formatLength,niceLength,snapAlignment,scaleBarDisplay,scaleBarStyle,scaleBarLayout} from '../web/geometry.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {sourceCrop,panelHeight,scalePixels,sourcePoint,connectorLines,formatLength,niceLength,snapAlignment,scaleBarDisplay,scaleBarStyle,scaleBarLayout} from '../web/geometry.js';
 test('scale bars preserve physical length through resizing and ROI zoom',()=>{assert.equal(scalePixels(2000,10,500,1000),100);assert.equal(scalePixels(2000,10,250,1000),50);assert.equal(scalePixels(2000,10,500,250),400)});
 test('source ROI maps canvas coordinates to original pixels',()=>{const a={width:1000,cropY:600};const p={x:30,y:50,w:500};assert.deepEqual(sourcePoint({x:280,y:200},p,a),{x:500,y:300});assert.deepEqual(sourcePoint({x:900,y:900},p,a),{x:1000,y:600});assert.deepEqual(sourceCrop({...p,roi:{x:200,y:100,w:150,h:80}},a),[200,100,150,80])});
 test('connectors follow near edges in four directions',()=>{const r={x:100,y:100,w:20,h:20};assert.deepEqual(connectorLines(r,{x:200,y:100,w:50,h:50})[0],[120,100,200,100]);assert.deepEqual(connectorLines(r,{x:0,y:100,w:50,h:50})[0],[100,100,50,100]);assert.deepEqual(connectorLines(r,{x:100,y:200,w:50,h:50})[0],[100,120,100,200]);assert.deepEqual(connectorLines(r,{x:100,y:0,w:50,h:50})[0],[100,100,100,50]);});
@@ -15,6 +15,31 @@ test('horizontal and vertical alignment snap independently',()=>{
 test('alignment does not snap beyond the interaction threshold',()=>{
  const result=snapAlignment({x:110,y:100,w:120,h:80},[{x:100,y:160,w:160,h:120}],6);
  assert.deepEqual(result.bounds,{x:110,y:100});assert.deepEqual(result.guides,[]);
+});
+test('bottom alignment uses actual cropped and inset heights from either direction',()=>{
+ const asset={width:1000,cropY:700};
+ const target={x:0,y:50,w:200,h:150};
+ for(const panel of [{w:140},{w:140,roi:{x:10,y:20,w:80,h:120}}]){
+  const h=panelHeight(panel,asset);
+  for(const delta of [-3,3]){
+   const result=snapAlignment({x:300,y:200-h+delta,w:panel.w,h},[target],4);
+   assert.equal(result.bounds.y+h,200);
+   assert.deepEqual(result.guides,[{axis:'horizontal',at:200,from:0,to:440,moveKind:'bottom',otherKind:'bottom'}]);
+  }
+ }
+});
+test('image width cannot create a phantom bottom snap',()=>{
+ const moving={x:300,y:59,w:140,h:80};
+ const result=snapAlignment(moving,[{x:0,y:50,w:200,h:150}],4);
+ assert.deepEqual(result.bounds,{x:300,y:59});assert.deepEqual(result.guides,[]);
+});
+test('right and bottom snap together and guides cover the final bounds',()=>{
+ const result=snapAlignment({x:163,y:18,w:140,h:80},[{x:100,y:50,w:200,h:50}],4);
+ assert.deepEqual(result.bounds,{x:160,y:20});
+ assert.deepEqual(result.guides,[
+  {axis:'vertical',at:300,from:20,to:100,moveKind:'right',otherKind:'right'},
+  {axis:'horizontal',at:100,from:100,to:300,moveKind:'bottom',otherKind:'bottom'}
+ ]);
 });
 test('scale bars use custom display size while preserving calibrated physical length',()=>{
  const asset={width:600,cropY:500,nmPerPx:10};const panel={x:0,y:0,w:300,barNm:100};

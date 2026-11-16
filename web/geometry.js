@@ -33,9 +33,9 @@ export function scaleBarLayout(panel,asset,fontSize,textWidth,labelHeight=0){
 export function sourcePoint(point,panel,asset){const c=sourceCrop(panel,asset),s=panel.w/c[2];return {x:clamp((point.x-panel.x)/s+c[0],c[0],c[0]+c[2]),y:clamp((point.y-panel.y)/s+c[1],c[1],c[1]+c[3])};}
 export function connectorLines(roi,inset){const rc={x:roi.x+roi.w/2,y:roi.y+roi.h/2},ic={x:inset.x+inset.w/2,y:inset.y+inset.h/2};const dx=ic.x-rc.x,dy=ic.y-rc.y;if(Math.abs(dx)>Math.abs(dy)){const rx=dx>=0?roi.x+roi.w:roi.x,ix=dx>=0?inset.x:inset.x+inset.w;return [[rx,roi.y,ix,inset.y],[rx,roi.y+roi.h,ix,inset.y+inset.h]];}const ry=dy>=0?roi.y+roi.h:roi.y,iy=dy>=0?inset.y:inset.y+inset.h;return [[roi.x,ry,inset.x,iy],[roi.x+roi.w,ry,inset.x+inset.w,iy]];}
 export function snapAlignment(moving,others,threshold=8){
- const snapped={x:moving.x,y:moving.y},guides=[];
+ const snapped={x:moving.x,y:moving.y},guides=[],matches=[];
  for(const axis of ['x','y']){
-  const vertical=axis==='x',offsets=[[0,'left','edge'],[moving.w,'right','edge']];
+  const vertical=axis==='x',offsets=vertical?[[0,'left'],[moving.w,'right']]:[[0,'top'],[moving.h,'bottom']];
   let best=null;
   for(const other of others){
    const otherOffsets=vertical?[[other.x,'left','edge'],[other.x+other.w,'right','edge']]
@@ -48,6 +48,10 @@ export function snapAlignment(moving,others,threshold=8){
   }
   if(!best)continue;
   snapped[axis]+=best.shift;
+  matches.push({vertical,best});
+ }
+ // Both axes must settle before guides are extended over the final bounds.
+ for(const {vertical,best} of matches){
   const low=vertical?Math.min(best.other.y,snapped.y):Math.min(best.other.x,snapped.x);
   const high=vertical?Math.max(best.other.y+best.other.h,snapped.y+moving.h):Math.max(best.other.x+best.other.w,snapped.x+moving.w);
   guides.push({axis:vertical?'vertical':'horizontal',at:best.at,from:low,to:high,moveKind:best.moveKind,otherKind:best.otherKind});
