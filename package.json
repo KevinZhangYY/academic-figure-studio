@@ -1,0 +1,23 @@
+{
+  "name": "sem-figure-studio",
+  "version": "0.4.0",
+  "description": "Local Codex plugin for calibrated SEM figure assembly",
+  "scripts": {
+    "start": "sh scripts/launch.sh",
+    "test": "node --test tests/geometry.test.js",
+    "test:browser": "node tests/browser.cjs",
+    "test:metadata-browser": "node tests/metadata-browser.cjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
+    "pdf-lib": "^1.17.1",
+    "pptxgenjs": "^4.0.1"
+  },
+  "overrides": {
+    "image-size": "^2.0.3"
+  }
+}

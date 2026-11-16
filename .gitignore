@@ -1,0 +1,10 @@
+node_modules/
+.sem-data/
+.test-output/
+__pycache__/
+.DS_Store
+dist/
+.venv/
+venv/
+/*.tif
+*.log
