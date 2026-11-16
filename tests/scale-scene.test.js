@@ -6,7 +6,7 @@ import * as geometry from '../web/geometry.js';
 
 test('render/export scene uses stable typography for old projects and resized insets',()=>{
  // Exercise the actual shared scene builder without browser automation.
- const source=readFileSync(new URL('../web/app.js',import.meta.url),'utf8').replace(/^import .*\n/,'').split('function drawScene(')[0];
+ const source=readFileSync(new URL('../web/app.js',import.meta.url),'utf8').replace(/^import .*\r?\n/,'').split('function drawScene(')[0];
  const context={save(){},restore(){},measureText(){return {width:60}}};
  const sandbox=vm.createContext({...geometry,structuredClone,document:{getElementById(){return {getContext(){return context}}}}});
  vm.runInContext(source+`

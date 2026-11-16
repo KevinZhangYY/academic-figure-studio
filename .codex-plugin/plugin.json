@@ -1,6 +1,6 @@
 {
   "name": "academic-figure-studio",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Local academic figure assembly with footer cropping, calibrated scale bars and linked zoom insets.",
   "author": {
     "name": "Academic Figure Studio"

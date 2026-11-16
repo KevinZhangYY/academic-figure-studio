@@ -7,7 +7,7 @@ function editor(){
  const handlers={};
  const canvas={getContext:()=>({}),addEventListener:(name,fn)=>handlers[name]=fn,setPointerCapture(){},getBoundingClientRect:()=>({left:0,top:0,width:1000,height:1000*130/180}),style:{}};
  const sandbox=vm.createContext({...geometry,structuredClone,document:{getElementById:()=>canvas}});
- const source=readFileSync(new URL('../web/app.js',import.meta.url),'utf8').replace(/^import .*\n/,'').split('function removeSelected(')[0];
+ const source=readFileSync(new URL('../web/app.js',import.meta.url),'utf8').replace(/^import .*\r?\n/,'').split('function removeSelected(')[0];
  vm.runInContext(source+`
  render=()=>{};updateInspector=()=>{};changed=()=>{};status=()=>{};
  state.assets=[{id:'asset',width:1000,cropY:800}];
