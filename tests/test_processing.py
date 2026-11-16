@@ -36,7 +36,7 @@ class TiffCalibration(unittest.TestCase):
   ini='SerialNumber=8200-16B7-03\nDataNumber=Regulus8230 0021\nSampleName=\nPixelSize=19.84375\n'
   m=self.metadata({40092:ini.encode('utf-16-le'),40093:'SU8200'.encode('utf-16-le')})
   self.assertEqual(m['status'],'ready');self.assertEqual(m['nmPerPx'],19.84375)
-  self.assertEqual(m['source'],'Hitachi SEM');self.assertEqual(m['field'],'TIFF 40092 · SemImageFile.PixelSize')
+  self.assertEqual(m['source'],'Hitachi TIFF');self.assertEqual(m['field'],'TIFF 40092 · SemImageFile.PixelSize')
  def test_ome_default_and_explicit_units(self):
   for unit,value,expected in [('',.01,10),('PhysicalSizeXUnit="nm"',8,8)]:
    xml=f'<OME><Image><Pixels SizeX="800" SizeY="600" PhysicalSizeX="{value}" {unit}/></Image></OME>'

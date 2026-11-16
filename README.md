@@ -1,21 +1,21 @@
-# SEM Figure Studio
+# Academic Figure Studio
 
-用于 Codex 的本地学术组图插件。交互画布支持 SEM 图像处理、论文图版及演示文稿图片制作。
+用于 Codex 的本地学术组图插件。交互画布支持显微镜及普通 图像处理、论文图版及演示文稿图片制作。
 
-当前版本：v0.4.0。直接下载插件包：<https://github.com/KevinZhangYY/sem-figure-studio/releases/latest/download/sem-figure-studio.zip>
+当前版本：v0.4.1。直接下载插件包：<https://github.com/KevinZhangYY/academic-figure-studio/releases/latest/download/academic-figure-studio.zip>
 
 ## AI Harness 快速部署
 
 AI Harness 可按以下顺序执行。所有命令都应在克隆后的插件根目录运行。
 
 ```sh
-git clone https://github.com/KevinZhangYY/sem-figure-studio.git
-cd sem-figure-studio
+git clone https://github.com/KevinZhangYY/academic-figure-studio.git
+cd academic-figure-studio
 npm ci
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements.txt
-SEM_PYTHON="$PWD/.venv/bin/python" sh scripts/launch.sh --port 8765
+FIGURE_PYTHON="$PWD/.venv/bin/python" sh scripts/launch.sh --port 8765
 ```
 
 在另一个终端检查服务：
@@ -24,33 +24,33 @@ SEM_PYTHON="$PWD/.venv/bin/python" sh scripts/launch.sh --port 8765
 curl -fsS http://127.0.0.1:8765/api/health
 ```
 
-预期返回包含 `"ok":true`、`"name":"SEM Figure Studio"` 和 `"version":"0.4.0"`。若 8765 被占用，可在启动命令中改为其他端口，并检查对应的 `http://127.0.0.1:<port>/api/health`。
+预期返回包含 `"ok":true`、`"name":"Academic Figure Studio"` 和 `"version":"0.4.1"`。若 8765 被占用，可在启动命令中改为其他端口，并检查对应的 `http://127.0.0.1:<port>/api/health`。
 
 将服务注册为 Codex 插件：
 
 ```sh
 python3 scripts/package_plugin.py
-codex plugin marketplace add ./dist/sem-figure-marketplace
-codex plugin add sem-figure-studio@sem-figure-local --json
+codex plugin marketplace add ./dist/academic-figure-marketplace
+codex plugin add academic-figure-studio@academic-figure-local --json
 ```
 
-安装成功后，AI Harness 可调用 `$sem-figure-studio`，并请求在内嵌浏览器面板打开工作台。若宿主不支持内嵌面板，则向用户提供服务返回的 localhost URL。
+安装成功后，AI Harness 可调用 `$academic-figure-studio`，并请求在内嵌浏览器面板打开工作台。若宿主不支持内嵌面板，则向用户提供服务返回的 localhost URL。
 
 环境变量：
 
-- `SEM_PYTHON`：指定具备 Pillow 与 NumPy 的 Python 可执行文件。
-- `SEM_FONT_PATH`：指定思源黑体 OTF；默认读取 `~/Library/Fonts/SourceHanSansCN-Regular.otf`。
-- `SEM_TESSERACT`：可选，指定 Tesseract 路径；未提供时仍可手动校准。
+- `FIGURE_PYTHON`：指定具备 Pillow 与 NumPy 的 Python 可执行文件。
+- `FIGURE_FONT_PATH`：指定思源黑体 OTF；默认读取 `~/Library/Fonts/SourceHanSansCN-Regular.otf`。
+- `FIGURE_TESSERACT`：可选，指定 Tesseract 路径；未提供时仍可手动校准。
 
 ## 从发布包快速安装
 
 发布包已包含 JavaScript 导出依赖，适合复制到受控环境：
 
 ```sh
-curl -fL -o sem-figure-studio.zip https://github.com/KevinZhangYY/sem-figure-studio/releases/latest/download/sem-figure-studio.zip
-unzip sem-figure-studio.zip
-codex plugin marketplace add ./sem-figure-marketplace
-codex plugin add sem-figure-studio@sem-figure-local --json
+curl -fL -o academic-figure-studio.zip https://github.com/KevinZhangYY/academic-figure-studio/releases/latest/download/academic-figure-studio.zip
+unzip academic-figure-studio.zip
+codex plugin marketplace add ./academic-figure-marketplace
+codex plugin add academic-figure-studio@academic-figure-local --json
 ```
 
 Python 图像依赖仍需满足 `requirements.txt`；发布包不会自动安装系统字体或 Tesseract。
@@ -64,9 +64,9 @@ sh scripts/launch.sh
 
 打开 `http://127.0.0.1:8765`。编辑器仅监听本机，图像不上传云端。可以通过 `--port 8766` 更改端口。
 
-当前机器可直接运行启动脚本，使用 Codex 已提供的 Python 图像处理环境。其他机器需要 Python 3.10+、Node.js 18+，并通过 `python3 -m pip install -r requirements.txt` 安装 Python 依赖。建议使用虚拟环境。环境变量 `SEM_PYTHON` 可指定 Python 可执行文件。
+当前机器可直接运行启动脚本，使用 Codex 已提供的 Python 图像处理环境。其他机器需要 Python 3.10+、Node.js 18+，并通过 `python3 -m pip install -r requirements.txt` 安装 Python 依赖。建议使用虚拟环境。环境变量 `FIGURE_PYTHON` 可指定 Python 可执行文件。
 
-字体默认读取 `~/Library/Fonts/SourceHanSansCN-Regular.otf`。其他系统请将 `SEM_FONT_PATH` 指向思源黑体 OTF 文件。可选的 Tesseract 用于识别原始比例尺文字，未安装时仍可手动校准。
+字体默认读取 `~/Library/Fonts/SourceHanSansCN-Regular.otf`。其他系统请将 `FIGURE_FONT_PATH` 指向思源黑体 OTF 文件。可选的 Tesseract 用于识别原始比例尺文字，未安装时仍可手动校准。
 
 ## 操作流程
 
@@ -82,7 +82,7 @@ sh scripts/launch.sh
 
 ## 保存与导出
 
-- 自动保存到浏览器本地 IndexedDB。通过“保存项目”下载的 `.semfig` 文件包含原始图片、校准值、ROI 及排版，可跨浏览器重新打开。
+- 自动保存到浏览器本地 IndexedDB。通过“保存项目”下载的 `.figstudio` 文件包含原始图片、校准值、ROI 及排版，可跨浏览器重新打开。
 - 原始上传字节保存在 `.sem-data/<id>/original`，显示图像保存在同目录。原始文件始终不被覆盖。不同来源的已知校准值分别保存。
 - PNG/TIFF 使用选择的 300 或 600 DPI，包含对应分辨率元数据。
 - PDF 保留矢量文字、比例尺与连线，并完整嵌入思源黑体；完整字体使文件比子集字体更大。
@@ -94,8 +94,8 @@ sh scripts/launch.sh
 当前支持以下物理像素尺寸元数据：
 
 - FEI / Thermo Fisher 的 SFEG、HELIOS TIFF 私有标签中的 Scan.PixelWidth / PixelHeight（米 / 像素）。
-- Hitachi SEM 的 UTF-16LE 私有标签 SemImageFile.PixelSize（nm / 像素）。
-- ZEISS SEM 的 AP_PIXEL_SIZE / AP_IMAGE_PIXEL_SIZE 明确单位字段。
+- Hitachi TIFF 的 UTF-16LE 私有标签 SemImageFile.PixelSize（nm / 像素）。
+- ZEISS TIFF 的 AP_PIXEL_SIZE / AP_IMAGE_PIXEL_SIZE 明确单位字段。
 - OME-TIFF 的 PhysicalSizeX / PhysicalSizeY。
 - ImageJ TIFF 的样品长度单位与像素分辨率组合。
 - 带明确物理单位的 PixelSizeX、PixelWidth 或 PixelSize 文本字段。
@@ -112,17 +112,17 @@ sh scripts/launch.sh
 
 ## Codex 插件
 
-插件清单：`.codex-plugin/plugin.json`。技能入口：`skills/sem-figure-studio/SKILL.md`。
+插件清单：`.codex-plugin/plugin.json`。技能入口：`skills/academic-figure-studio/SKILL.md`。
 
 打包本地插件市场（包含导出依赖，不包含原始图像或项目数据）：
 
 ```sh
 python3 scripts/package_plugin.py
-codex plugin marketplace add ./dist/sem-figure-marketplace
-codex plugin add sem-figure-studio@sem-figure-local
+codex plugin marketplace add ./dist/academic-figure-marketplace
+codex plugin add academic-figure-studio@academic-figure-local
 ```
 
-安装后，可在支持刷新插件的 Codex 会话中调用 `$sem-figure-studio`，或请求在内嵌画布中打开工作台。若当前会话未重新发现插件，使用新会话。插件通过本地服务渲染画布，并优先显示在 Codex 内嵌浏览器面板中；若宿主不支持面板控制，再提供本地地址。
+安装后，可在支持刷新插件的 Codex 会话中调用 `$academic-figure-studio`，或请求在内嵌画布中打开工作台。若当前会话未重新发现插件，使用新会话。插件通过本地服务渲染画布，并优先显示在 Codex 内嵌浏览器面板中；若宿主不支持面板控制，再提供本地地址。
 
 ## 验证
 
@@ -135,4 +135,4 @@ PLAYWRIGHT_PATH=/path/to/playwright npm run test:browser
 python3 tests/verify_exports.py
 ```
 
-新增测试覆盖 TIFF 自动校准、元数据缺失时完整原图两点标定、衬边反色以及 PDF 输出。浏览器测试覆盖演示导入、ROI 手势、关联连线、拖动、撤销/重做、校准、五种格式导出及项目恢复。图像算法另有黑白底栏、无底栏、空白图和高位深 TIFF 测试。尚未用用户实际 SEM 图像校验设备版式适配性。
+新增测试覆盖 TIFF 自动校准、元数据缺失时完整原图两点标定、衬边反色以及 PDF 输出。浏览器测试覆盖演示导入、ROI 手势、关联连线、拖动、撤销/重做、校准、五种格式导出及项目恢复。图像算法另有黑白底栏、无底栏、空白图和高位深 TIFF 测试。尚未用用户实际图像校验设备版式适配性。

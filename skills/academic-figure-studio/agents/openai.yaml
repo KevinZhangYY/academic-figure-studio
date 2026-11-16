@@ -1,0 +1,4 @@
+interface:
+  display_name: "Academic Figure Studio"
+  short_description: "学术组图内嵌工作台：裁除信息栏、校准比例尺与关联局部放大"
+  default_prompt: "使用 $academic-figure-studio 在内嵌画布中打开学术组图工作台。"

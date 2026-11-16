@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local SEM figure studio. Originals remain immutable; crop/scale are scene metadata."""
+"""Local academic figure studio. Originals remain immutable; crop/scale are scene metadata."""
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 import argparse, base64, io, json, os, re, subprocess, tempfile, uuid
@@ -10,8 +10,8 @@ from tiff_calibration import extract_calibration
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / '.sem-data'
-FONT = Path(os.environ.get('SEM_FONT_PATH', str(Path.home() / 'Library/Fonts/SourceHanSansCN-Regular.otf')))
-TESSERACT = os.environ.get('SEM_TESSERACT', 'tesseract')
+FONT = Path(os.environ.get('FIGURE_FONT_PATH', str(Path.home() / 'Library/Fonts/SourceHanSansCN-Regular.otf')))
+TESSERACT = os.environ.get('FIGURE_TESSERACT', 'tesseract')
 MAX_BYTES = 100 * 1024 * 1024
 Image.MAX_IMAGE_PIXELS = 80_000_000
 
@@ -109,7 +109,7 @@ def demo_images():
         im=Image.new('RGB',(w,h)); im.paste(Image.fromarray(np.uint8(np.clip(arr,0,255))).convert('RGB'),(0,0))
         d=ImageDraw.Draw(im); f=ImageFont.truetype(str(FONT),18) if FONT.exists() else ImageFont.load_default()
         d.text((20,15),'SYNTHETIC DEMO / 非实验图像',font=f,fill='white')
-        d.text((20,625),'SEM DEMO     5.0 kV     WD 8.0 mm',font=f,fill='white')
+        d.text((20,625),'DEMO IMAGE     5.0 kV     WD 8.0 mm',font=f,fill='white')
         d.rectangle((650,618,829,622),fill='white'); d.text((710,636),'2 µm',font=f,fill='white')
         b=io.BytesIO();im.save(b,format='PNG'); item=save_image(b.getvalue(),f'演示纹理 {seed+1}（非实验数据）.png')
         item['demo']=True;item['footer']={'y':600,'confidence':1,'reason':'演示图片的已知边界'}
@@ -139,7 +139,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('X-Content-Type-Options','nosniff');self.end_headers();self.wfile.write(data)
     def do_GET(self):
         path=urlparse(self.path).path
-        if path=='/api/health': return self.reply({'ok':True,'font':FONT.exists(),'name':'SEM Figure Studio','version':'0.4.0'})
+        if path=='/api/health': return self.reply({'ok':True,'font':FONT.exists(),'name':'Academic Figure Studio','version':'0.4.1'})
         if path=='/font.otf': file=FONT; kind='font/otf'
         elif re.fullmatch(r'/media/[a-f0-9]{32}/image.png',path): file=DATA/path.split('/')[2]/'image.png';kind='image/png'
         else:
@@ -165,7 +165,7 @@ class Handler(BaseHTTPRequestHandler):
                     raw=base64.b64decode(p['png'].split(',')[-1],validate=True);im=Image.open(io.BytesIO(raw));out=io.BytesIO();dpi=int(p.get('dpi',300))
                     im.save(out,format='TIFF' if fmt=='tiff' else 'PNG',**({'compression':'tiff_lzw'} if fmt=='tiff' else {}),dpi=(dpi,dpi));return self.reply(out.getvalue(),'image/tiff' if fmt=='tiff' else 'image/png')
                 if fmt not in ('pdf','pptx'): raise ValueError('不支持的格式')
-                if not FONT.exists(): raise ValueError('未找到思源黑体，请设置 SEM_FONT_PATH')
+                if not FONT.exists(): raise ValueError('未找到思源黑体，请设置 FIGURE_FONT_PATH')
                 p=prepare_scene(p);p['fontPath']=str(FONT)
                 with tempfile.TemporaryDirectory() as td:
                     inp=Path(td)/'scene.json';out=Path(td)/f'figure.{fmt}';inp.write_text(json.dumps(p))
@@ -180,6 +180,6 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--port',type=int,default=8765);args=p.parse_args()
     DATA.mkdir(exist_ok=True)
     server=ThreadingHTTPServer(('127.0.0.1',args.port),Handler)
-    print(f'SEM Figure Studio: http://127.0.0.1:{args.port}',flush=True)
+    print(f'Academic Figure Studio: http://127.0.0.1:{args.port}',flush=True)
     server.serve_forever()
 if __name__=='__main__': main()

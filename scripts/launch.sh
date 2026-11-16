@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-if [ -n "${SEM_PYTHON:-}" ]; then
-  PY="$SEM_PYTHON"
+if [ -n "${FIGURE_PYTHON:-}" ]; then
+  PY="$FIGURE_PYTHON"
 elif python3 -c 'import PIL,numpy' >/dev/null 2>&1; then
   PY=python3
 elif [ -x "$HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3" ]; then

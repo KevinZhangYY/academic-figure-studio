@@ -1,13 +1,13 @@
 {
-  "name": "sem-figure-studio",
-  "version": "0.4.0",
-  "description": "Local academic SEM figure assembly with footer cropping, calibrated scale bars and linked zoom insets.",
+  "name": "academic-figure-studio",
+  "version": "0.4.1",
+  "description": "Local academic figure assembly with footer cropping, calibrated scale bars and linked zoom insets.",
   "author": {
-    "name": "SEM Figure Studio"
+    "name": "Academic Figure Studio"
   },
   "license": "MIT",
   "keywords": [
-    "SEM",
+    "Microscopy",
     "academic",
     "figure",
     "microscopy",
@@ -16,10 +16,10 @@
   "skills": "./skills/",
   "category": "Productivity",
   "interface": {
-    "displayName": "SEM Figure Studio",
-    "shortDescription": "SEM 学术组图、比例尺与局部放大",
-    "longDescription": "在 Codex 内嵌工作台中裁除 SEM 信息栏、校准比例尺、排列多图并创建关联放大图，导出论文和演示文稿图版。",
-    "developerName": "SEM Figure Studio",
+    "displayName": "Academic Figure Studio",
+    "shortDescription": "学术组图、比例尺与局部放大",
+    "longDescription": "在 Codex 内嵌工作台中裁除仪器信息栏、校准比例尺、排列多图并创建关联放大图，导出论文和演示文稿图版。",
+    "developerName": "Academic Figure Studio",
     "category": "Productivity",
     "capabilities": [
       "Interactive",
@@ -30,8 +30,8 @@
     "composerIcon": "./assets/icon.svg",
     "logo": "./assets/icon.svg",
     "defaultPrompt": [
-      "在内嵌画布中打开 SEM 学术组图工作台",
-      "把这些 SEM 图片排成论文组图，并添加比例尺和局部放大图"
+      "在内嵌画布中打开学术组图工作台",
+      "把这些图片排成论文组图，并添加比例尺和局部放大图"
     ]
   }
 }

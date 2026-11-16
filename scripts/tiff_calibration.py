@@ -1,7 +1,7 @@
 """Read specimen-space calibration, never infer it from ordinary print DPI.
 
-Recognized sources: FEI SFEG/HELIOS private IFD tags (metres), Hitachi SEM
-SemImageFile.PixelSize (nm), ZEISS SEM AP_PIXEL_SIZE (explicit unit), OME
+Recognized sources: FEI SFEG/HELIOS private IFD tags (metres), Hitachi TIFF
+SemImageFile.PixelSize (nm), ZEISS TIFF AP_PIXEL_SIZE (explicit unit), OME
 Pixels (PhysicalSizeX/Y), ImageJ calibrated resolution plus specimen unit,
 and explicit-unit pixel-size text.
 """
@@ -79,7 +79,7 @@ def extract_calibration(image):
             ini.read_string(ini_text)
             for section in ini.sections():
                 if section.lower() == 'semimagefile' and 'pixelsize' in ini[section]:
-                    add('Hitachi SEM', ini[section]['pixelsize'], None, 'nm', f'TIFF {40092} · {section}.PixelSize')
+                    add('Hitachi TIFF', ini[section]['pixelsize'], None, 'nm', f'TIFF {40092} · {section}.PixelSize')
         except configparser.Error:
             pass
     # ZEISS stores a key line followed by a human-readable value and unit.
@@ -87,7 +87,7 @@ def extract_calibration(image):
     for text in (zeiss, description):
         match = re.search(r'(?im)^AP_(?:IMAGE_)?PIXEL_SIZE\s*\n[^\n]*?[=:]\s*('+NUMBER+r')\s*([^\s\r\n]+)', text)
         if match:
-            add('ZEISS SEM', match[1], match[1], match[2], 'AP_PIXEL_SIZE')
+            add('ZEISS TIFF', match[1], match[1], match[2], 'AP_PIXEL_SIZE')
     # OME's default physical length unit is micrometres. The first Pixels
     # belongs to the first image; reject stale dimensions after resizing.
     stale_ome = False

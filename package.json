@@ -1,7 +1,7 @@
 {
-  "name": "sem-figure-studio",
-  "version": "0.4.0",
-  "description": "Local Codex plugin for calibrated SEM figure assembly",
+  "name": "academic-figure-studio",
+  "version": "0.4.1",
+  "description": "Local Codex plugin for calibrated academic figure assembly",
   "scripts": {
     "start": "sh scripts/launch.sh",
     "test": "node --test tests/geometry.test.js",
