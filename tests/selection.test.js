@@ -33,9 +33,20 @@ test('shift marquee adds to selection and cancel preserves objects and selection
  assert.deepEqual(e.get(),before);
  e.fire('pointerdown',20,20);e.fire('pointerup',20,20);assert.deepEqual(e.get().ids,[]);
 });
-test('selected parent moves its inset exactly once with the selected group',()=>{
+test('inset stays put when only its parent is marquee-selected',()=>{
  const e=editor();e.addInset();e.fire('pointerdown',50,50);e.fire('pointermove',450,220);e.fire('pointerup',450,220);
  assert.deepEqual(e.get().ids.sort(),['a','b']);
  e.fire('pointerdown',170,130);e.fire('pointermove',190,160);e.fire('pointerup',190,160);
- assert.deepEqual(e.get().panels.map(p=>[p.x,p.y]),[[120,130],[320,130],[700,100],[130,140]]);
+ assert.deepEqual(e.get().panels.map(p=>[p.x,p.y]),[[120,130],[320,130],[700,100],[110,110]]);
+});
+
+test('multi-select drag snaps group bottom to another panel top',()=>{
+ const e=editor();
+ e.fire('pointerdown',50,50);e.fire('pointermove',450,220);e.fire('pointerup',450,220);
+ assert.deepEqual(e.get().ids.sort(),['a','b']);
+ e.fire('pointerdown',130,130);e.fire('pointermove',130,200);e.fire('pointerup',130,200);
+ const panels=e.get().panels;
+ assert.deepEqual([panels[0].x,panels[0].y],[100,170]);
+ assert.deepEqual([panels[1].x,panels[1].y],[300,170]);
+ assert.deepEqual([panels[2].x,panels[2].y],[700,100]);
 });

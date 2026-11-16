@@ -2,7 +2,7 @@
 
 用于 Codex 的本地学术组图插件。交互画布支持显微镜及普通 图像处理、论文图版及演示文稿图片制作。
 
-当前版本：v0.5.3。直接下载插件包：<https://github.com/KevinZhangYY/academic-figure-studio/releases/latest/download/academic-figure-studio.zip>
+当前版本：v0.5.5。直接下载插件包：<https://github.com/KevinZhangYY/academic-figure-studio/releases/latest/download/academic-figure-studio.zip>
 
 v0.4.5 修复从空白处斜拉框选多个图版时的事件错误，支持反向框选、Shift 追加选择和整体移动。
 
@@ -12,7 +12,7 @@ v0.4.4 修复非正方形图版底边吸附偏移：使用裁剪后或局部放�
 
 在 GitHub Releases 下载 `Academic-Figure-Studio-Windows-x64.exe`，双击后点击启动器中的“打开工作台”。该便携版自带 Python、Node.js、思源黑体及导出依赖，无需 Codex。关闭启动器前请保存项目。首次启动需要解压内置组件。
 
-当前 EXE **未签名**，Windows 可能显示未知发布者或 SmartScreen 提示。发布页附 SHA256SUMS.txt，供核对文件完整性；校验和不能代替代码签名。正式签名需要有效的代码签名证书或签名服务，不应通过自签名证书或关闭系统安全防护来规避提示。
+EXE 通过 Microsoft Azure Trusted Signing 自动签名并加时间戳，具有受信任发布者身份。发布页附 SHA256SUMS.txt，供核对文件完整性。新程序可能有短暂的 Windows 信誉积累期，运行时选择「仍要运行」即可；请勿关闭系统安全防护。自签名证书无法消除安全提示，不用于正式发布。
 
 Windows 版启动时检查本仓库最新正式 Release，只有存在对应 EXE 时才提示更新；也可点击“检查更新”。离线或检查失败不影响组图。检查仅请求 GitHub Release 元数据，不上传图片，结果缓存 5 分钟。不自动下载、替换或执行新程序。更新前保存 `.figstudio`，关闭旧启动器，再运行新 EXE。
 
@@ -49,7 +49,7 @@ FIGURE_PYTHON="$PWD/.venv/bin/python" sh scripts/launch.sh --port 8765
 curl -fsS http://127.0.0.1:8765/api/health
 ```
 
-预期返回包含 `"ok":true`、`"name":"Academic Figure Studio"` 和 `"version":"0.5.3"`。若 8765 被占用，可在启动命令中改为其他端口，并检查对应的 `http://127.0.0.1:<port>/api/health`。
+预期返回包含 `"ok":true`、`"name":"Academic Figure Studio"` 和 `"version":"0.5.5"`。若 8765 被占用，可在启动命令中改为其他端口，并检查对应的 `http://127.0.0.1:<port>/api/health`。
 
 将服务注册为 Codex 插件：
 

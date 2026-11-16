@@ -70,8 +70,7 @@ canvas.addEventListener('pointerdown',e=>{
  if(mode==='roi'){drag={kind:'roi',id:p.id,start:pt,last:pt,original:clone(state.panels)}}
  else if(handle){selectedIds=new Set([p.id]);selected=p.id;drag={kind:'resize',ids:[p.id],id:p.id,start:pt,last:pt,original:clone(state.panels)}}
  else{
-  const roots=state.panels.filter(q=>selectedIds.has(q.id)&&!(q.parentId&&selectedIds.has(q.parentId))).map(q=>q.id);
-  selectedIds=new Set(roots);selected=roots.includes(p.id)?p.id:roots[0];
+  const roots=[...selectedIds];
   drag={kind:'move',ids:roots,id:p.id,start:pt,last:pt,original:clone(state.panels),guides:[]}
  }
  canvas.setPointerCapture(e.pointerId);render()
@@ -84,22 +83,19 @@ canvas.addEventListener('pointermove',e=>{
  const p=selectedPanel(),a=assetFor(p),orig=drag.original.find(q=>q.id===p.id);
  if(drag.kind==='move'){
   const originals=drag.ids.map(id=>drag.original.find(q=>q.id===id));
-  const involved=originals.concat(originals.flatMap(orig=>drag.original.filter(q=>q.parentId===orig.id)));
+  const involved=originals;
   const left=Math.min(...involved.map(q=>q.x)),top=Math.min(...involved.map(q=>q.y));
   const right=Math.max(...involved.map(q=>q.x+q.w)),bottom=Math.max(...involved.map(q=>q.y+panelHeight(q,assetFor(q))));
   const rawDx=pt.x-drag.start.x,rawDy=pt.y-drag.start.y;
   let dx=clamp(rawDx,-left,W-right),dy=clamp(rawDy,-top,H()-bottom),guides=[];
-  if(drag.ids.length===1){
-   const q=originals[0],qa=assetFor(q);
-   const bx=clamp(q.x+rawDx,0,W-q.w),by=clamp(q.y+rawDy,0,H()-panelHeight(q,qa));
-   const others=state.panels.filter(r=>!drag.ids.includes(r.id)&&(!q.parentId||r.parentId!==q.id)).map(r=>({x:r.x,y:r.y,w:r.w,h:panelHeight(r,assetFor(r))}));
-   const snap=snapAlignment({x:bx,y:by,w:q.w,h:panelHeight(q,qa)},others,6/zoom);
-   dx=snap.bounds.x-q.x;dy=snap.bounds.y-q.y;guides=snap.guides
-  }
+  const gw=right-left,gh=bottom-top;
+  const bx=clamp(left+rawDx,0,W-gw),by=clamp(top+rawDy,0,H()-gh);
+  const others=state.panels.filter(r=>!drag.ids.includes(r.id)).map(r=>({x:r.x,y:r.y,w:r.w,h:panelHeight(r,assetFor(r))}));
+  const snap=snapAlignment({x:bx,y:by,w:gw,h:gh},others,6/zoom);
+  dx=snap.bounds.x-left;dy=snap.bounds.y-top;guides=snap.guides;
   for(const id of drag.ids){
-   const q=state.panels.find(r=>r.id===id),old=drag.original.find(r=>r.id===id),qa=assetFor(q);
+   const q=state.panels.find(r=>r.id===id),old=drag.original.find(r=>r.id===id);
    q.x=old.x+dx;q.y=old.y+dy;
-   for(const child of state.panels.filter(r=>r.parentId===id)){const co=drag.original.find(r=>r.id===child.id);child.x=co.x+dx;child.y=co.y+dy}
   }
   drag.guides=guides
  }else if(drag.kind==='resize'){

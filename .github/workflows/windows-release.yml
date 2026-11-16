@@ -32,6 +32,27 @@ jobs:
         run: python packaging/build_windows.py
       - name: Smoke test packaged EXE and exports
         run: python tests/smoke_windows.py
+      - name: Sign Windows executable
+        if: ${{ secrets.AZURE_CLIENT_ID != '' }}
+        uses: azure/trusted-signing-action@v0.5.0
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          azure-signing-account: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+          azure-certificate-profile-name: ${{ secrets.AZURE_SIGNING_CERT_PROFILE }}
+          endpoint: https://eus.codesigning.azure.net/
+          files-folder: dist
+          files-folder-filter: exe
+          timestamp-rfc3161: http://timestamp.digicert.com
+          timestamp-digest: SHA256
+      - name: Verify Windows signature
+        if: ${{ secrets.AZURE_CLIENT_ID != '' }}
+        shell: pwsh
+        run: |
+          $sig = Get-AuthenticodeSignature 'dist/Academic-Figure-Studio-Windows-x64.exe'
+          if ($sig.Status -ne 'Valid') { throw "Signature invalid: $($sig.StatusMessage)" }
+          Write-Host "Signed by: $($sig.SignerCertificate.Subject)"
       - name: Build plugin package and checksums
         shell: pwsh
         run: |
@@ -40,7 +61,7 @@ jobs:
           $files = @('dist/Academic-Figure-Studio-Windows-x64.exe', 'dist/academic-figure-studio.zip')
           $lines = $files | ForEach-Object { $h = Get-FileHash $_ -Algorithm SHA256; "$($h.Hash.ToLower())  $(Split-Path $_ -Leaf)" }
           $lines | Set-Content dist/SHA256SUMS.txt -Encoding ascii
-      - name: Publish tested unsigned Windows build
+      - name: Publish tested Windows build
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
