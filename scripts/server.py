@@ -11,7 +11,8 @@ from tiff_calibration import extract_calibration
 from update_checker import check_update
 
 FROZEN = bool(getattr(sys, 'frozen', False))
-ROOT = Path(sys._MEIPASS) if FROZEN else Path(__file__).resolve().parents[1]
+# Normalize Windows short paths before checking static-file containment.
+ROOT = (Path(sys._MEIPASS) if FROZEN else Path(__file__).resolve().parents[1]).resolve()
 VERSION = json.loads((ROOT / 'package.json').read_text(encoding='utf-8'))['version']
 DATA = Path(os.environ.get('FIGURE_DATA_DIR') or (str(Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'AcademicFigureStudio' / 'data') if FROZEN else str(ROOT / '.sem-data')))
 NODE = str(ROOT / 'runtime' / 'node.exe') if FROZEN else 'node'
