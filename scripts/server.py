@@ -53,7 +53,7 @@ def scale_candidate(image, footer_y):
     try:
         with tempfile.TemporaryDirectory() as td:
             path = Path(td)/'ocr.png'; strip.resize((strip.width*2,strip.height*2)).save(path)
-            result = subprocess.run([TESSERACT,str(path),'stdout','--psm','11','tsv'], capture_output=True,text=True,timeout=15,**SUBPROCESS_OPTIONS)
+            result = subprocess.run([TESSERACT,str(path),'stdout','--psm','11','tsv'], capture_output=True,text=True,encoding='utf-8',errors='replace',timeout=15,**SUBPROCESS_OPTIONS)
         words=[]
         for line in result.stdout.splitlines()[1:]:
             cols=line.split('\t')
@@ -102,7 +102,7 @@ def save_image(raw,name):
     (folder/'original').write_bytes(raw); image.save(folder/'image.png')
     footer=detect_footer(image)
     result={'id':key,'name':Path(name).name,'width':image.width,'height':image.height,'url':f'/media/{key}/image.png','footer':footer,'scaleCandidate':scale_candidate(image,footer['y']) if calibration['status'] != 'ready' else None,'metadataCalibration':calibration,'note':note}
-    (folder/'meta.json').write_text(json.dumps(result,ensure_ascii=False))
+    (folder/'meta.json').write_text(json.dumps(result,ensure_ascii=False),encoding='utf-8')
     return result
 
 def demo_images():
@@ -175,8 +175,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not FONT.exists(): raise ValueError('未找到思源黑体，请设置 FIGURE_FONT_PATH')
                 p=prepare_scene(p);p['fontPath']=str(FONT)
                 with tempfile.TemporaryDirectory() as td:
-                    inp=Path(td)/'scene.json';out=Path(td)/f'figure.{fmt}';inp.write_text(json.dumps(p))
-                    run=subprocess.run([NODE,str(ROOT/'scripts/export.cjs'),str(inp),str(out)],capture_output=True,text=True,timeout=90,cwd=ROOT,**SUBPROCESS_OPTIONS)
+                    inp=Path(td)/'scene.json';out=Path(td)/f'figure.{fmt}';inp.write_text(json.dumps(p),encoding='utf-8')
+                    run=subprocess.run([NODE,str(ROOT/'scripts/export.cjs'),str(inp),str(out)],capture_output=True,text=True,encoding='utf-8',errors='replace',timeout=90,cwd=ROOT,**SUBPROCESS_OPTIONS)
                     if run.returncode: raise ValueError('导出失败：'+run.stderr[-500:])
                     return self.reply(out.read_bytes(),'application/pdf' if fmt=='pdf' else 'application/vnd.openxmlformats-officedocument.presentationml.presentation')
             return self.reply({'error':'Unknown endpoint'},status=404)

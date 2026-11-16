@@ -2,7 +2,7 @@
 
 用于 Codex 的本地学术组图插件。交互画布支持显微镜及普通 图像处理、论文图版及演示文稿图片制作。
 
-当前版本：v0.5.1。直接下载插件包：<https://github.com/KevinZhangYY/academic-figure-studio/releases/latest/download/academic-figure-studio.zip>
+当前版本：v0.5.2。直接下载插件包：<https://github.com/KevinZhangYY/academic-figure-studio/releases/latest/download/academic-figure-studio.zip>
 
 v0.4.5 修复从空白处斜拉框选多个图版时的事件错误，支持反向框选、Shift 追加选择和整体移动。
 
@@ -49,7 +49,7 @@ FIGURE_PYTHON="$PWD/.venv/bin/python" sh scripts/launch.sh --port 8765
 curl -fsS http://127.0.0.1:8765/api/health
 ```
 
-预期返回包含 `"ok":true`、`"name":"Academic Figure Studio"` 和 `"version":"0.5.1"`。若 8765 被占用，可在启动命令中改为其他端口，并检查对应的 `http://127.0.0.1:<port>/api/health`。
+预期返回包含 `"ok":true`、`"name":"Academic Figure Studio"` 和 `"version":"0.5.2"`。若 8765 被占用，可在启动命令中改为其他端口，并检查对应的 `http://127.0.0.1:<port>/api/health`。
 
 将服务注册为 Codex 插件：
 
