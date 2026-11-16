@@ -2,7 +2,7 @@
 
 用于 Codex 的本地学术组图插件。交互画布支持显微镜及普通 图像处理、论文图版及演示文稿图片制作。
 
-当前版本：v0.4.2。直接下载插件包：<https://github.com/KevinZhangYY/academic-figure-studio/releases/latest/download/academic-figure-studio.zip>
+当前版本：v0.4.3。直接下载插件包：<https://github.com/KevinZhangYY/academic-figure-studio/releases/latest/download/academic-figure-studio.zip>
 
 ## AI Harness 快速部署
 
@@ -24,7 +24,7 @@ FIGURE_PYTHON="$PWD/.venv/bin/python" sh scripts/launch.sh --port 8765
 curl -fsS http://127.0.0.1:8765/api/health
 ```
 
-预期返回包含 `"ok":true`、`"name":"Academic Figure Studio"` 和 `"version":"0.4.2"`。若 8765 被占用，可在启动命令中改为其他端口，并检查对应的 `http://127.0.0.1:<port>/api/health`。
+预期返回包含 `"ok":true`、`"name":"Academic Figure Studio"` 和 `"version":"0.4.3"`。若 8765 被占用，可在启动命令中改为其他端口，并检查对应的 `http://127.0.0.1:<port>/api/health`。
 
 将服务注册为 Codex 插件：
 
@@ -136,3 +136,7 @@ python3 tests/verify_exports.py
 ```
 
 新增测试覆盖 TIFF 自动校准、元数据缺失时完整原图两点标定、衬边反色以及 PDF 输出。浏览器测试覆盖演示导入、ROI 手势、关联连线、拖动、撤销/重做、校准、五种格式导出及项目恢复。图像算法另有黑白底栏、无底栏、空白图和高位深 TIFF 测试。尚未用用户实际图像校验设备版式适配性。
+
+## 比例尺定位与字号
+
+默认标尺字号和粗细采用统一画布尺寸，不随小图宽度、ROI 或标尺线长缩小；各图版仍可单独设置字号和粗细。文字与标尺作为整体按所选角落定位，底部及侧边留出 15 个画布像素。标注放不下时提示调整尺寸，不自动缩小文字。固定物理长度的标尺线随图像比例变化；固定显示长度模式则自动换算物理长度。

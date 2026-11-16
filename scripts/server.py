@@ -139,7 +139,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('X-Content-Type-Options','nosniff');self.end_headers();self.wfile.write(data)
     def do_GET(self):
         path=urlparse(self.path).path
-        if path=='/api/health': return self.reply({'ok':True,'font':FONT.exists(),'name':'Academic Figure Studio','version':'0.4.2'})
+        if path=='/api/health': return self.reply({'ok':True,'font':FONT.exists(),'name':'Academic Figure Studio','version':'0.4.3'})
         if path=='/font.otf': file=FONT; kind='font/otf'
         elif re.fullmatch(r'/media/[a-f0-9]{32}/image.png',path): file=DATA/path.split('/')[2]/'image.png';kind='image/png'
         else:

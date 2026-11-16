@@ -1,4 +1,4 @@
-import {clamp,factor,niceLength,formatLength,normalizeRect,sourceCrop,panelHeight,scalePixels,sourcePoint,connectorLines,snapAlignment,scaleBarDisplay} from './geometry.js';
+import {clamp,factor,niceLength,formatLength,normalizeRect,sourceCrop,panelHeight,scalePixels,sourcePoint,connectorLines,snapAlignment,scaleBarDisplay,scaleBarStyle,scaleBarLayout} from './geometry.js';
 const $=id=>document.getElementById(id), canvas=$('canvas'),ctx=canvas.getContext('2d');
 let state={version:1,name:'形貌分析',widthMm:180,heightMm:130,background:'#ffffff',fontSize:20,showLabels:true,gap:18,columns:2,assets:[],panels:[]};
 let selected=null,selectedIds=new Set(),mode='move',zoom=1,drag=null,history=[],future=[],images=new Map(),busy=false,calPoints=[],saveTimer,db;
@@ -11,6 +11,14 @@ async function api(path,p){const r=await fetch(path,{method:'POST',headers:{'Con
 function checkpoint(){history.push(clone(state));if(history.length>30)history.shift();future=[];}
 function changed(){state.name=$('projectName').value||'形貌分析';$('savedState').textContent='正在保存…';clearTimeout(saveTimer);saveTimer=setTimeout(async()=>{try{if(db){const tx=db.transaction('projects','readwrite');tx.objectStore('projects').put(clone(state),'current');tx.oncomplete=()=>{$('savedState').textContent='已保存到本机'};tx.onerror=()=>{$('savedState').textContent='请另存项目文件'}}}catch{$('savedState').textContent='请另存项目文件'}},600);render();}
 function perform(fn){checkpoint();fn();changed();updateInspector();}
+function panelScaleLayout(p,a){
+ const spec=scaleBarDisplay(p,a),val=formatLength(spec.physicalNm),text=`${val.value} ${val.unit}`;
+ const style=scaleBarStyle(p,state.fontSize);
+ ctx.save();ctx.font=`${style.fontSize}px "Source Han Sans"`;
+ const metrics=ctx.measureText(text),width=Math.max(metrics.width,(metrics.actualBoundingBoxLeft||0)+(metrics.actualBoundingBoxRight||0));ctx.restore();
+ const labelHeight=state.showLabels&&p.label?Math.min(state.fontSize,p.w*.12,panelHeight(p,a)*.14)*1.45+7:0;
+ return {...scaleBarLayout(p,a,state.fontSize,width,p.barPosition.startsWith('t')?labelHeight:0),text};
+}
 function scene(){
  const out=[{type:'rect',x:0,y:0,w:W,h:H(),fill:state.background}];
  for(const p of state.panels){const a=assetFor(p);if(!a)continue;out.push({type:'image',sourceId:a.id,crop:sourceCrop(p,a),x:p.x,y:p.y,w:p.w,h:panelHeight(p,a)});}
@@ -21,12 +29,11 @@ function scene(){
   out.push({type:'rect',...r,stroke:p.lineColor,lineWidth:2});out.push({type:'rect',...inset,stroke:p.lineColor,lineWidth:2});
  }
  for(const p of state.panels){const a=assetFor(p),height=panelHeight(p,a),fs=Math.min(state.fontSize,p.w*.12,height*.14);if(state.showLabels&&p.label){out.push({type:'rect',x:p.x+7,y:p.y+7,w:Math.max(fs*1.15,p.label.length*fs*.65)+8,h:fs*1.45,fill:'#111111',opacity:.7});out.push({type:'text',text:p.label,x:p.x+12,y:p.y+10,size:fs,color:'#ffffff'});}
-  if(p.showScale&&a.calibrated&&a.nmPerPx>0){const barSpec=scaleBarDisplay(p,a),bar=barSpec.pixels;if(bar>p.w-30||bar<4)continue;
-   const right=p.barPosition.endsWith('r'),bottom=p.barPosition.startsWith('b'),x=right?p.x+p.w-15-bar:p.x+15,y=bottom?p.y+height-18:p.y+fs*2+16;
-   const val=formatLength(barSpec.physicalNm),text=`${val.value} ${val.unit}`,f=Number.isFinite(p.barFontSize)&&p.barFontSize>=2?p.barFontSize:Math.min(fs*.72,bar*.36),thickness=Number.isFinite(p.barThickness)&&p.barThickness>=1?p.barThickness:Math.max(2.5,fs*.16),outline=p.barOutline!==false,contrast=p.barColor==='#ffffff'?'#111111':'#ffffff',edge=1.3;
-   if(outline)out.push({type:'rect',role:'scale-outline',x:x-edge,y:y-thickness/2-edge,w:bar+2*edge,h:thickness+2*edge,fill:contrast});
-   out.push({type:'rect',role:'scale-bar',x,y:y-thickness/2,w:bar,h:thickness,fill:p.barColor});
-   out.push({type:'text',role:'scale-label',text,x:x+bar/2,y:y-f*1.55,size:f,color:p.barColor,align:'center',outline:outline?contrast:undefined,outlineWidth:outline?2.2:0});
+  if(p.showScale&&a.calibrated&&a.nmPerPx>0){const layout=panelScaleLayout(p,a),bar=layout.pixels;if(bar>p.w-30||bar<4)continue;
+   const {barX:x,barY:y,textX,textY,fontSize:f,thickness,text}=layout,outline=p.barOutline!==false,contrast=p.barColor==='#ffffff'?'#111111':'#ffffff',edge=1.3;
+   if(outline)out.push({type:'rect',role:'scale-outline',x:x-edge,y:y-edge,w:bar+2*edge,h:thickness+2*edge,fill:contrast});
+   out.push({type:'rect',role:'scale-bar',x,y,w:bar,h:thickness,fill:p.barColor});
+   out.push({type:'text',role:'scale-label',text,x:textX,y:textY,size:f,color:p.barColor,align:'center',outline:outline?contrast:undefined,outlineWidth:outline?2.2:0});
   }
  }
  return out;
@@ -123,7 +130,7 @@ $('confirmCal').onclick=()=>{const px=Number($('calPixels').value),value=Number(
 function blobDownload(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000)}
 async function pngCanvas(dpi){await document.fonts.ready;const width=Math.round(state.widthMm/25.4*dpi),height=Math.round(state.heightMm/25.4*dpi);if(width*height>50e6)throw Error('导出尺寸超过 5000 万像素，请降低 DPI 或画布尺寸');const c=document.createElement('canvas');c.width=width;c.height=height;drawScene(c.getContext('2d'),scene(),width/W);return c}
 async function svgExport(){const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');const font=await(await fetch('/font.otf')).blob(),fontData=await new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(font)});let svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${state.widthMm}mm" height="${state.heightMm}mm" viewBox="0 0 ${W} ${H()}"><defs><style>@font-face{font-family:SourceHanSans;src:url(${fontData})}</style></defs>`;for(const e of scene()){if(e.type==='image'){const c=document.createElement('canvas');c.width=e.crop[2];c.height=e.crop[3];c.getContext('2d').drawImage(images.get(e.sourceId),...e.crop,0,0,c.width,c.height);svg+=`<image x="${e.x}" y="${e.y}" width="${e.w}" height="${e.h}" href="${c.toDataURL()}"/>`}if(e.type==='rect')svg+=`<rect x="${e.x}" y="${e.y}" width="${e.w}" height="${e.h}" fill="${e.fill||'none'}" stroke="${e.stroke||'none'}" stroke-width="${e.lineWidth||0}" opacity="${e.opacity??1}"/>`;if(e.type==='line')svg+=`<line x1="${e.points[0]}" y1="${e.points[1]}" x2="${e.points[2]}" y2="${e.points[3]}" stroke="${e.stroke}" stroke-width="${e.lineWidth}"/>`;if(e.type==='text')svg+=`<text x="${e.x}" y="${e.y+e.size*.88}" font-family="SourceHanSans" font-size="${e.size}" fill="${e.color}" text-anchor="${e.align==='center'?'middle':'start'}"${e.outline?` stroke="${e.outline}" stroke-width="${e.outlineWidth}" stroke-linejoin="round" paint-order="stroke fill"`: ''}>${esc(e.text)}</text>`}return new Blob([svg+'</svg>'],{type:'image/svg+xml'})}
-function exportIssues(){let issues=[];for(const p of state.panels){const a=assetFor(p);if(p.showScale&&!a.calibrated)issues.push(`图版 ${p.label||'局部放大'} 未校准`);else if(p.showScale){const px=scaleBarDisplay(p,a).pixels;if(px>p.w-30||px<4)issues.push(`图版 ${p.label||'局部放大'} 的标尺长度不适合当前图版`)}}return issues}
+function exportIssues(){let issues=[];for(const p of state.panels){const a=assetFor(p);if(p.showScale&&!a.calibrated)issues.push(`图版 ${p.label||'局部放大'} 未校准`);else if(p.showScale){const layout=panelScaleLayout(p,a),px=layout.pixels;if(!layout.fits||px>p.w-30||px<4)issues.push(`图版 ${p.label||'局部放大'} 的标尺标注超出图版，请调整图版或标注尺寸`)}}return issues}
 $('openExport').onclick=()=>{if(!state.panels.length)return toast('请先导入图像');const issues=exportIssues();$('exportSummary').textContent=`${state.widthMm} × ${state.heightMm} mm · ${state.panels.length} 个图版。${issues.length?issues.join('；')+'。请校准或关闭相应比例尺。':'比例尺校准已通过检查。'}${state.assets.some(a=>a.demo)?' 包含演示纹理，非实验数据。':''}`;$('exportSummary').className='notice'+(issues.length?' warn':'');$('exportDialog').showModal()};
 $('exportConfirm').onclick=async()=>{if(exportIssues().length)return toast('请先校准比例尺，或关闭未校准图版的比例尺显示');const button=$('exportConfirm');button.disabled=true;button.textContent='正在导出…';try{const format=$('exportFormat').value,dpi=+$('exportDpi').value;let blob;if(format==='png'||format==='tiff'){const c=await pngCanvas(dpi);blob=await(await api('/api/export',{format,dpi,png:c.toDataURL()})).blob()}else if(format==='svg')blob=await svgExport();else blob=await(await api('/api/export',{format,widthMm:state.widthMm,heightMm:state.heightMm,width:W,height:H(),scene:scene()})).blob();blobDownload(blob,`${state.name}.${format}`);$('exportDialog').close();toast('组图已导出')}catch(e){toast(e.message)}finally{button.disabled=false;button.textContent='导出文件'}};
 $('saveProject').onclick=()=>{state.name=$('projectName').value;blobDownload(new Blob([JSON.stringify(state)],{type:'application/json'}),`${state.name}.figstudio`);toast('项目已保存，包含原始图像、校准及排版参数')};
