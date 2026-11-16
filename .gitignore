@@ -8,3 +8,7 @@ dist/
 venv/
 /*.tif
 *.log
+build/
+runtime/
+assets/fonts/
+*.spec

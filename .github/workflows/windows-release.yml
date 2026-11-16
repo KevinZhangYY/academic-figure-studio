@@ -1,0 +1,65 @@
+name: Windows executable release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: |
+          npm ci
+          if ($LASTEXITCODE -ne 0) { throw "npm install failed" }
+          python -m pip install -r requirements.txt pyinstaller==6.16.0
+      - name: Test source
+        run: |
+          npm test
+          if ($LASTEXITCODE -ne 0) { throw "JavaScript tests failed" }
+          python -m unittest discover -s tests -p 'test_*.py'
+      - name: Build self-contained EXE
+        run: python packaging/build_windows.py
+      - name: Smoke test packaged EXE and exports
+        run: python tests/smoke_windows.py
+      - name: Build plugin package and checksums
+        shell: pwsh
+        run: |
+          python scripts/package_plugin.py
+          if ($LASTEXITCODE -ne 0) { throw "Plugin packaging failed" }
+          $files = @('dist/Academic-Figure-Studio-Windows-x64.exe', 'dist/academic-figure-studio.zip')
+          $lines = $files | ForEach-Object { $h = Get-FileHash $_ -Algorithm SHA256; "$($h.Hash.ToLower())  $(Split-Path $_ -Leaf)" }
+          $lines | Set-Content dist/SHA256SUMS.txt -Encoding ascii
+      - name: Publish tested unsigned Windows build
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          $tag = "v$version"
+          if ('${{ github.ref_type }}' -eq 'tag' -and '${{ github.ref_name }}' -ne $tag) { throw 'Tag/package version mismatch' }
+          gh release view $tag --repo '${{ github.repository }}' *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --repo '${{ github.repository }}' --target '${{ github.sha }}' --title "$tag - Windows portable app" --notes-file packaging/RELEASE_NOTES.md
+            if ($LASTEXITCODE -ne 0) { throw 'Release creation failed' }
+          }
+          gh release upload $tag dist/Academic-Figure-Studio-Windows-x64.exe dist/academic-figure-studio.zip dist/SHA256SUMS.txt --clobber --repo '${{ github.repository }}'
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-build
+          path: |
+            dist/*.exe
+            dist/SHA256SUMS.txt
+          if-no-files-found: ignore

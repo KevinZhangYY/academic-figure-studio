@@ -1,6 +1,6 @@
 {
   "name": "academic-figure-studio",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "description": "Local Codex plugin for calibrated academic figure assembly",
   "scripts": {
     "start": "sh scripts/launch.sh",

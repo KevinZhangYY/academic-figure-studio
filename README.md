@@ -2,9 +2,32 @@
 
 用于 Codex 的本地学术组图插件。交互画布支持显微镜及普通 图像处理、论文图版及演示文稿图片制作。
 
-当前版本：v0.4.4。直接下载插件包：<https://github.com/KevinZhangYY/academic-figure-studio/releases/latest/download/academic-figure-studio.zip>
+当前版本：v0.5.0。直接下载插件包：<https://github.com/KevinZhangYY/academic-figure-studio/releases/latest/download/academic-figure-studio.zip>
+
+v0.4.5 修复从空白处斜拉框选多个图版时的事件错误，支持反向框选、Shift 追加选择和整体移动。
 
 v0.4.4 修复非正方形图版底边吸附偏移：使用裁剪后或局部放大区域的实际显示高度计算底边，对齐辅助线按吸附后的最终位置绘制。
+
+## Windows 独立版
+
+在 GitHub Releases 下载 `Academic-Figure-Studio-Windows-x64.exe`，双击后点击启动器中的“打开工作台”。该便携版自带 Python、Node.js、思源黑体及导出依赖，无需 Codex。关闭启动器前请保存项目。首次启动需要解压内置组件。
+
+当前 EXE **未签名**，Windows 可能显示未知发布者或 SmartScreen 提示。发布页附 SHA256SUMS.txt，供核对文件完整性；校验和不能代替代码签名。正式签名需要有效的代码签名证书或签名服务，不应通过自签名证书或关闭系统安全防护来规避提示。
+
+Windows 版启动时检查本仓库最新正式 Release，只有存在对应 EXE 时才提示更新；也可点击“检查更新”。离线或检查失败不影响组图。检查仅请求 GitHub Release 元数据，不上传图片，结果缓存 5 分钟。不自动下载、替换或执行新程序。更新前保存 `.figstudio`，关闭旧启动器，再运行新 EXE。
+
+图像数据位于 `%LOCALAPPDATA%\AcademicFigureStudio\data`，浏览器项目存储在固定的 `http://127.0.0.1:8765` 来源下。升级时保留数据目录，并使用同一浏览器。端口被其他程序或不同版本占用时会提示关闭旧服务，不会悄悄切换端口造成项目看似丢失。
+
+Windows 构建命令：
+
+```powershell
+npm ci
+python -m pip install -r requirements.txt pyinstaller==6.16.0
+python packaging/build_windows.py
+python tests/smoke_windows.py
+```
+
+构建需要联网获取 Node.js 许可证和 Adobe 思源黑体（含字体许可证）；Node.js 来自构建机的受信任安装。`.github/workflows/windows-release.yml` 在推送版本标签时运行测试、打包、实际启动 EXE 验证导出，再发布 EXE、插件包及校验和。Windows 包必须在 Windows 上构建。
 
 ## AI Harness 快速部署
 
@@ -26,7 +49,7 @@ FIGURE_PYTHON="$PWD/.venv/bin/python" sh scripts/launch.sh --port 8765
 curl -fsS http://127.0.0.1:8765/api/health
 ```
 
-预期返回包含 `"ok":true`、`"name":"Academic Figure Studio"` 和 `"version":"0.4.4"`。若 8765 被占用，可在启动命令中改为其他端口，并检查对应的 `http://127.0.0.1:<port>/api/health`。
+预期返回包含 `"ok":true`、`"name":"Academic Figure Studio"` 和 `"version":"0.5.0"`。若 8765 被占用，可在启动命令中改为其他端口，并检查对应的 `http://127.0.0.1:<port>/api/health`。
 
 将服务注册为 Codex 插件：
 

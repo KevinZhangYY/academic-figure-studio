@@ -2,15 +2,21 @@
 """Local academic figure studio. Originals remain immutable; crop/scale are scene metadata."""
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
-import argparse, base64, io, json, os, re, subprocess, tempfile, uuid
+import argparse, base64, io, json, os, re, subprocess, tempfile, uuid, sys
 from urllib.parse import urlparse
 import numpy as np
 from PIL import Image, ImageOps, ImageDraw, ImageFont
 from tiff_calibration import extract_calibration
 
-ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / '.sem-data'
-FONT = Path(os.environ.get('FIGURE_FONT_PATH', str(Path.home() / 'Library/Fonts/SourceHanSansCN-Regular.otf')))
+from update_checker import check_update
+
+FROZEN = bool(getattr(sys, 'frozen', False))
+ROOT = Path(sys._MEIPASS) if FROZEN else Path(__file__).resolve().parents[1]
+VERSION = json.loads((ROOT / 'package.json').read_text(encoding='utf-8'))['version']
+DATA = Path(os.environ.get('FIGURE_DATA_DIR') or (str(Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'AcademicFigureStudio' / 'data') if FROZEN else str(ROOT / '.sem-data')))
+NODE = str(ROOT / 'runtime' / 'node.exe') if FROZEN else 'node'
+SUBPROCESS_OPTIONS = {'creationflags': subprocess.CREATE_NO_WINDOW} if sys.platform == 'win32' else {}
+FONT = Path(os.environ.get('FIGURE_FONT_PATH', str(ROOT / 'assets/fonts/SourceHanSansCN-Regular.otf') if FROZEN else str(Path.home() / 'Library/Fonts/SourceHanSansCN-Regular.otf')))
 TESSERACT = os.environ.get('FIGURE_TESSERACT', 'tesseract')
 MAX_BYTES = 100 * 1024 * 1024
 Image.MAX_IMAGE_PIXELS = 80_000_000
@@ -47,7 +53,7 @@ def scale_candidate(image, footer_y):
     try:
         with tempfile.TemporaryDirectory() as td:
             path = Path(td)/'ocr.png'; strip.resize((strip.width*2,strip.height*2)).save(path)
-            result = subprocess.run([TESSERACT,str(path),'stdout','--psm','11','tsv'], capture_output=True,text=True,timeout=15)
+            result = subprocess.run([TESSERACT,str(path),'stdout','--psm','11','tsv'], capture_output=True,text=True,timeout=15,**SUBPROCESS_OPTIONS)
         words=[]
         for line in result.stdout.splitlines()[1:]:
             cols=line.split('\t')
@@ -139,7 +145,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('X-Content-Type-Options','nosniff');self.end_headers();self.wfile.write(data)
     def do_GET(self):
         path=urlparse(self.path).path
-        if path=='/api/health': return self.reply({'ok':True,'font':FONT.exists(),'name':'Academic Figure Studio','version':'0.4.4'})
+        if path=='/api/health': return self.reply({'ok':True,'font':FONT.exists(),'name':'Academic Figure Studio','version':VERSION,'desktop':FROZEN})
+        if path=='/api/update': return self.reply(check_update(VERSION))
         if path=='/font.otf': file=FONT; kind='font/otf'
         elif re.fullmatch(r'/media/[a-f0-9]{32}/image.png',path): file=DATA/path.split('/')[2]/'image.png';kind='image/png'
         else:
@@ -169,7 +176,7 @@ class Handler(BaseHTTPRequestHandler):
                 p=prepare_scene(p);p['fontPath']=str(FONT)
                 with tempfile.TemporaryDirectory() as td:
                     inp=Path(td)/'scene.json';out=Path(td)/f'figure.{fmt}';inp.write_text(json.dumps(p))
-                    run=subprocess.run(['node',str(ROOT/'scripts/export.cjs'),str(inp),str(out)],capture_output=True,text=True,timeout=90,cwd=ROOT)
+                    run=subprocess.run([NODE,str(ROOT/'scripts/export.cjs'),str(inp),str(out)],capture_output=True,text=True,timeout=90,cwd=ROOT,**SUBPROCESS_OPTIONS)
                     if run.returncode: raise ValueError('导出失败：'+run.stderr[-500:])
                     return self.reply(out.read_bytes(),'application/pdf' if fmt=='pdf' else 'application/vnd.openxmlformats-officedocument.presentationml.presentation')
             return self.reply({'error':'Unknown endpoint'},status=404)
@@ -178,7 +185,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--port',type=int,default=8765);args=p.parse_args()
-    DATA.mkdir(exist_ok=True)
+    DATA.mkdir(parents=True,exist_ok=True)
     server=ThreadingHTTPServer(('127.0.0.1',args.port),Handler)
     print(f'Academic Figure Studio: http://127.0.0.1:{args.port}',flush=True)
     server.serve_forever()

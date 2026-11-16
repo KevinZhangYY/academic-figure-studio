@@ -59,19 +59,19 @@ function changeCrop(y){const p=selectedPanel(),a=assetFor(p);y=clamp(Math.round(
 function setMode(v){mode=v;for(const name of ['move','roi'])$(name+'Tool').classList.toggle('active',v===name);canvas.style.cursor=v==='roi'?'crosshair':'default';status(v==='roi'?'在原图上拖动框选区域，松开后创建关联放大图。':'拖动图像调整位置；空白处斜拉框选多图整体移动，拖动右下角手柄等比缩放。')}
 const point=e=>{const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H()}};
 const hit=p=>[...state.panels].reverse().find(q=>p.x>=q.x&&p.x<=q.x+q.w&&p.y>=q.y&&p.y<=q.y+panelHeight(q,assetFor(q)));
-const resizeHandleHit=pt=>{const r=18/zoom;return [...state.panels].reverse().find(p=>{const h=panelHeight(p,assetFor(p));return Math.abs(pt.x-(p.x+p.w))<r&&Math.abs(pt.y-(p.y+h))<r})};
+const resizeHandleHit=pt=>{const r=18/zoom;return [...state.panels].reverse().filter(p=>p.id===selected&&selectedIds.size===1).find(p=>{const h=panelHeight(p,assetFor(p));return Math.abs(pt.x-(p.x+p.w))<r&&Math.abs(pt.y-(p.y+h))<r})};
 canvas.addEventListener('pointerdown',e=>{
  const pt=point(e),handle=mode==='move'?resizeHandleHit(pt):null,p=handle||hit(pt);
  if(p&&(e.shiftKey||e.metaKey||e.ctrlKey)){if(selectedIds.has(p.id)&&selectedIds.size>1)selectedIds.delete(p.id);else selectedIds.add(p.id);selected=p.id;updateInspector();render();return}
  if(p&&!selectedIds.has(p.id))setSelection([p.id],p.id);else if(p)selected=p.id;
- updateInspector();if(!p){if(mode==='move'){checkpoint();drag={kind:'select',start:pt,last:pt,base:selectedIds};canvas.setPointerCapture(e.pointerId)}render();return}
+ updateInspector();if(!p){if(mode==='move'){drag={kind:'select',start:pt,last:pt,base:new Set(selectedIds),primary:selected,additive:e.shiftKey||e.metaKey||e.ctrlKey};canvas.setPointerCapture(e.pointerId)}render();return}
  const a=assetFor(p);if(mode==='roi'&&p.parentId){toast('请在原图上创建选区');return}
  checkpoint();
  if(mode==='roi'){drag={kind:'roi',id:p.id,start:pt,last:pt,original:clone(state.panels)}}
  else if(handle){selectedIds=new Set([p.id]);selected=p.id;drag={kind:'resize',ids:[p.id],id:p.id,start:pt,last:pt,original:clone(state.panels)}}
  else{
   const roots=state.panels.filter(q=>selectedIds.has(q.id)&&!(q.parentId&&selectedIds.has(q.parentId))).map(q=>q.id);
-  selectedIds=new Set(roots);selected=p.id;
+  selectedIds=new Set(roots);selected=roots.includes(p.id)?p.id:roots[0];
   drag={kind:'move',ids:roots,id:p.id,start:pt,last:pt,original:clone(state.panels),guides:[]}
  }
  canvas.setPointerCapture(e.pointerId);render()
@@ -79,9 +79,10 @@ canvas.addEventListener('pointerdown',e=>{
 canvas.addEventListener('pointermove',e=>{
  const pt=point(e);
  if(!drag){if(mode!=='roi')canvas.style.cursor=resizeHandleHit(pt)?'nwse-resize':'default';return}
- const p=selectedPanel(),a=assetFor(p),orig=drag.original.find(q=>q.id===p.id);drag.last=pt;
- if(drag.kind==='select')render();
- else if(drag.kind==='move'){
+ drag.last=pt;
+ if(drag.kind==='select'){render();return}
+ const p=selectedPanel(),a=assetFor(p),orig=drag.original.find(q=>q.id===p.id);
+ if(drag.kind==='move'){
   const originals=drag.ids.map(id=>drag.original.find(q=>q.id===id));
   const involved=originals.concat(originals.flatMap(orig=>drag.original.filter(q=>q.parentId===orig.id)));
   const left=Math.min(...involved.map(q=>q.x)),top=Math.min(...involved.map(q=>q.y));
@@ -112,6 +113,7 @@ function finishDrag(){
  if(d.kind==='select'){
   const r=normalizeRect(d.start,d.last);
   let ids=[];if(r.w>4&&r.h>4){const hits=state.panels.filter(q=>q.x<r.x+r.w&&q.x+q.w>r.x&&q.y<r.y+r.h&&q.y+panelHeight(q,assetFor(q))>r.y).map(q=>q.id);ids=hits.filter(id=>{const q=state.panels.find(r=>r.id===id);return !(q.parentId&&hits.includes(q.parentId))}).reverse()}
+  if(d.additive)ids=[...new Set([...d.base,...ids])];
   setSelection(ids);if(ids.length>1)status(`已选择 ${ids.length} 个图版，可整体拖动。`)
  }else if(d.kind==='roi'){
   const a=assetFor(p),r=normalizeRect(sourcePoint(d.start,p,a),sourcePoint(d.last,p,a));r.x=Math.round(r.x);r.y=Math.round(r.y);r.w=Math.min(Math.round(r.w),a.width-r.x);r.h=Math.min(Math.round(r.h),a.cropY-r.y);
@@ -120,7 +122,7 @@ function finishDrag(){
  }
  changed();updateInspector()
 }
-canvas.addEventListener('pointerup',finishDrag);canvas.addEventListener('pointercancel',()=>{if(drag){state.panels=drag.original;drag=null;render()}})
+canvas.addEventListener('pointerup',finishDrag);canvas.addEventListener('pointercancel',()=>{if(drag){if(drag.kind==='select'){selectedIds=drag.base;selected=drag.primary}else state.panels=drag.original;drag=null;render();updateInspector()}})
 function removeSelected(){if(!selectedIds.size)return;perform(()=>{const remove=new Set(selectedIds);for(const id of selectedIds)for(const q of state.panels.filter(r=>r.parentId===id))remove.add(q.id);state.panels=state.panels.filter(q=>!remove.has(q.id));selectedIds=new Set();selected=null})}
 function openCalibration(){const p=selectedPanel();if(!p){toast('请先选择一张图像');return}const a=assetFor(p),c=a.scaleCandidate;calPoints=c?clone(c.points):[];$('calValue').value=c?.value||1;$('calUnit').value=c?.unit||'µm';$('calPixels').value=c?.pixels||'';$('calHint').textContent=c?'已定位候选比例尺。请核对两端点及长度后确认。':'依次点击机器比例尺的两个端点，或直接输入像素长度。';$('calMetadataStatus').textContent=a.metadataCalibration?.status==='ready'?`TIFF 元数据：${a.metadataCalibration.source} · ${Number(a.metadataCalibration.nmPerPx.toPrecision(6))} nm / px，可手动重新标定。`:(a.metadataCalibration?.reason||'没有可用的物理像素元数据，请手动标定。');$('calOriginalInfo').textContent=`未裁剪原图 · ${a.width} × ${a.height} px · 保留机器标尺与信息栏`;$('calZoom').value='fit';$('calibrationDialog').showModal();drawCalibration();$('calibrationImage').scrollTo(0,0)}
 function drawCalibration(){const p=selectedPanel();if(!p)return;const a=assetFor(p),c=$('calibrationCanvas'),v=$('calZoom').value,displayScale=v==='fit'?Math.min(($('calibrationDialog').clientWidth-56)/a.width,window.innerHeight*.40/a.height):Number(v),ratio=window.devicePixelRatio||1,s=displayScale*ratio;c.width=Math.round(a.width*s);c.height=Math.round(a.height*s);c.style.width=`${a.width*displayScale}px`;c.style.height=`${a.height*displayScale}px`;const t=c.getContext('2d');t.drawImage(images.get(a.id),0,0,c.width,c.height);t.strokeStyle='#ffcd5b';t.fillStyle='#ffcd5b';t.lineWidth=2;calPoints.forEach(([x,y])=>{t.beginPath();t.arc(x*s,y*s,4,0,Math.PI*2);t.stroke()});if(calPoints.length===2){t.beginPath();t.moveTo(calPoints[0][0]*s,calPoints[0][1]*s);t.lineTo(calPoints[1][0]*s,calPoints[1][1]*s);t.stroke()}}
