@@ -6,6 +6,12 @@ export function normalizeRect(a,b){return {x:Math.min(a.x,b.x),y:Math.min(a.y,b.
 export function sourceCrop(panel,asset){return panel.roi?[panel.roi.x,panel.roi.y,panel.roi.w,panel.roi.h]:[0,0,asset.width,asset.cropY];}
 export function panelHeight(panel,asset){const c=sourceCrop(panel,asset);return panel.w*c[3]/c[2];}
 export function scalePixels(lengthNm,nmPerPx,displayWidth,sourceWidth){return lengthNm/nmPerPx*displayWidth/sourceWidth;}
+export function scaleBarDisplay(panel,asset,maxWidth=panel.w-30){
+ const crop=sourceCrop(panel,asset),automatic=scalePixels(panel.barNm,asset.nmPerPx,panel.w,crop[2]);
+ const custom=Number.isFinite(panel.barWidth)&&panel.barWidth>0;
+ const pixels=custom?clamp(panel.barWidth,4,Math.max(4,maxWidth)):automatic;
+ return {pixels,auto:automatic,physicalNm:custom?pixels*asset.nmPerPx*crop[2]/panel.w:panel.barNm};
+}
 export function sourcePoint(point,panel,asset){const c=sourceCrop(panel,asset),s=panel.w/c[2];return {x:clamp((point.x-panel.x)/s+c[0],c[0],c[0]+c[2]),y:clamp((point.y-panel.y)/s+c[1],c[1],c[1]+c[3])};}
 export function connectorLines(roi,inset){const rc={x:roi.x+roi.w/2,y:roi.y+roi.h/2},ic={x:inset.x+inset.w/2,y:inset.y+inset.h/2};const dx=ic.x-rc.x,dy=ic.y-rc.y;if(Math.abs(dx)>Math.abs(dy)){const rx=dx>=0?roi.x+roi.w:roi.x,ix=dx>=0?inset.x:inset.x+inset.w;return [[rx,roi.y,ix,inset.y],[rx,roi.y+roi.h,ix,inset.y+inset.h]];}const ry=dy>=0?roi.y+roi.h:roi.y,iy=dy>=0?inset.y:inset.y+inset.h;return [[roi.x,ry,inset.x,iy],[roi.x+roi.w,ry,inset.x+inset.w,iy]];}
 export function snapAlignment(moving,others,threshold=8){
